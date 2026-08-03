@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download primary private artifact
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: g10-file-boundary-30856035375
