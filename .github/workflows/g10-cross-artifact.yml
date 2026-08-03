@@ -1,0 +1,24 @@
+name: G10 cross artifact reader
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download primary private artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: g10-file-boundary-30856035375
+          repository: apexblack-koala-274804/chainship-private-test
+          run-id: 30856035375
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: out
+      - name: Print downloaded files
+        shell: bash
+        run: |
+          find out -maxdepth 5 -type f -print -exec sed -n '1,30p' {} \;
